@@ -37,6 +37,7 @@ pub enum SetupError {
     InvalidPartitionLayout,
     InvalidFormatParams,
     RereadFailed(Errno),
+    ComposefsSetupRootUnitNotFound,
     Unexpected,
 }
 

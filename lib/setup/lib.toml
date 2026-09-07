@@ -49,7 +49,29 @@ settle_interval_ms = 100
 # `uki.efi_linux_dir`, which is the same directory spelled as a backslash UEFI device-path string
 # for NVRAM Boot#### entries, not a filesystem path — the two can't share a definition across the
 # crate boundary.
+#
+# system_dir is a source-relative directory, sibling to the package archives `EnumeratePackagesStage`
+# scans (skipped by it automatically — it only looks at files, never directories) — a literal,
+# 1:1 mirror of the target's real `/usr` layout (matches `PrefixTree`, see `database_path` in
+# `lib/lib/lib.toml`), imported wholesale by `ImportSystemStage`. This is how a built `up`/
+# `upac-lib`/booters (or anything else that must exist outside the normal per-package pipeline)
+# gets onto a genesis'd disk — genesis never resolves or installs itself automatically, whoever
+# assembles `--source` has to put it there, same assumption already made for the systemd-boot/
+# rEFInd binaries.
+#
+# composefs_setup_root_unit_path (relative to `system_dir`, i.e. also relative to real `/usr`) is
+# where `ImportSystemStage` requires to find a `composefs-setup-root.service` unit — hard error
+# (`SetupError::ComposefsSetupRootUnitNotFound`) if missing, since a genesis'd disk cannot boot at
+# all without it. composefs_setup_root_wants_path/composefs_setup_root_wants_target: the stage
+# also creates the unit's `*.target.wants/` enablement symlink itself (pure systemd mechanics, no
+# reason to burden `--source` with it) — see TODO.md for why this specific set of paths matches
+# `composefs-setup-root`'s own hardcoded expectations (confirmed by reading its upstream source,
+# not guessed).
 [genesis]
 scratch_filename = "genesis-packages.redb"
 esp_fallback_loader = "EFI/BOOT/BOOTX64.EFI"
 efi_linux_dir = "EFI/Linux"
+system_dir = "system"
+composefs_setup_root_unit_path = "lib/systemd/system/composefs-setup-root.service"
+composefs_setup_root_wants_path = "lib/systemd/system/initrd-root-fs.target.wants/composefs-setup-root.service"
+composefs_setup_root_wants_target = "../composefs-setup-root.service"

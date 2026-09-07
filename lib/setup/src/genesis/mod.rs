@@ -19,6 +19,7 @@ use self::entry::StageBootStage;
 use self::enumerate::EnumeratePackagesStage;
 use self::import::ImportPackageStage;
 use self::source::PrepareSourceStage;
+use self::system::ImportSystemStage;
 use self::unpack::UnpackPackageStage;
 
 use crate::data::{SetupExistingData, SetupWholeDiskData};
@@ -32,6 +33,7 @@ mod entry;
 mod enumerate;
 mod import;
 mod source;
+mod system;
 mod unpack;
 
 macro_rules! ctx_get {
@@ -73,10 +75,11 @@ pub enum GenesisStage {
     EnumeratePackages = 1,
     UnpackPackage = 2,
     ImportPackage = 3,
-    EmbedDatabase = 4,
-    WriteDeployRecord = 5,
-    StageBoot = 6,
-    Setup = 7,
+    ImportSystem = 4,
+    EmbedDatabase = 5,
+    WriteDeployRecord = 6,
+    StageBoot = 7,
+    Setup = 8,
 }
 
 impl SetupExistingData<'_> {
@@ -104,6 +107,7 @@ impl SetupExistingData<'_> {
             Box::new(EnumeratePackagesStage),
             Box::new(UnpackPackageStage),
             Box::new(ImportPackageStage),
+            Box::new(ImportSystemStage),
             Box::new(EmbedDatabaseStage),
             Box::new(WriteDeployRecordStage),
             Box::new(StageBootStage),
@@ -140,6 +144,7 @@ impl SetupWholeDiskData<'_> {
             Box::new(EnumeratePackagesStage),
             Box::new(UnpackPackageStage),
             Box::new(ImportPackageStage),
+            Box::new(ImportSystemStage),
             Box::new(EmbedDatabaseStage),
             Box::new(WriteDeployRecordStage),
             Box::new(StageBootStage),
