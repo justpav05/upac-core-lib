@@ -21,11 +21,13 @@ err-missing-source = Отсутствует обязательный аргум�
 err-invalid-partition-layout = Запрошенные размеры разделов не помещаются на диск
 err-invalid-format-params = Некорректные параметры форматирования файловой системы
 err-reread-failed = Не удалось перечитать таблицу разделов (устройство занято?)
+err-composefs-setup-root-unit-not-found = composefs-setup-root.service не найден в директории system/ источника
 
 stage-prepare-source = Подготовка источника
 stage-enumerate-packages = Перечисление пакетов
 stage-unpack-package = Распаковка пакета
 stage-import-package = Импорт пакета
+stage-import-system = Импорт системных файлов
 stage-embed-database = Встраивание базы данных пакета
 stage-write-deploy-record = Запись записи деплоя
 stage-stage-boot = Подготовка загрузочной записи

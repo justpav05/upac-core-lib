@@ -60,6 +60,9 @@ impl Display for LocalizedSetupError {
             SetupError::RereadFailed(errno) => {
                 write!(formatter, "{} ({errno})", fl!(LOADER, "err-reread-failed"))
             }
+            SetupError::ComposefsSetupRootUnitNotFound => {
+                formatter.write_str(&fl!(LOADER, "err-composefs-setup-root-unit-not-found"))
+            }
             SetupError::Unexpected => formatter.write_str(&fl!(LOADER, "err-unexpected")),
         }
     }

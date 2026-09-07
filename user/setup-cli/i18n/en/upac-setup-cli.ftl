@@ -21,11 +21,13 @@ err-missing-source = Missing required argument: --source
 err-invalid-partition-layout = Requested partition sizes don't fit on the disk
 err-invalid-format-params = Invalid filesystem formatting parameters
 err-reread-failed = Failed to reread the partition table (device busy?)
+err-composefs-setup-root-unit-not-found = composefs-setup-root.service not found under source's system/ directory
 
 stage-prepare-source = Preparing source
 stage-enumerate-packages = Enumerating packages
 stage-unpack-package = Unpacking package
 stage-import-package = Importing package
+stage-import-system = Importing system files
 stage-embed-database = Embedding package database
 stage-write-deploy-record = Writing deploy record
 stage-stage-boot = Staging boot entry

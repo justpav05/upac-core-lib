@@ -140,6 +140,10 @@ fn no_payload_variants_use_their_fixed_localized_message() {
             SetupError::InvalidFormatParams,
             "Invalid filesystem formatting parameters",
         ),
+        (
+            SetupError::ComposefsSetupRootUnitNotFound,
+            "composefs-setup-root.service not found under source's system/ directory",
+        ),
         (SetupError::Unexpected, "Unexpected error"),
     ];
 
