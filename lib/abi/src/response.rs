@@ -5,9 +5,10 @@
 
 use upac_macro::{CFree, CNew, CValidate};
 
+use crate::FreeDecodeResponseFn;
 use crate::error::ErrorKind;
 use crate::memory::{free_cslice, free_cvec_owning};
-use crate::package::{CPackageMeta, CVersion};
+use crate::package::{CPackageDependency, CPackageMeta, CVersion};
 use crate::types::{CSlice, CVec, check_size};
 use crate::{DiffFileSource, FileDiffKind, PackageDiffKind};
 
@@ -196,12 +197,20 @@ pub struct CDiffResponse {
 }
 
 #[repr(C)]
-#[derive(CFree)]
-pub struct CUnmutatedResponse {
+#[derive(CValidate)]
+pub struct CDecodePackageResponse {
     pub struct_size: usize,
 
-    pub metas: CVec<CPackageMeta>,
-    pub files: CVec<CDiffPrefixFileEntry>,
-    pub commits: CVec<CConfigCommitEntry>,
-    pub diff_packages: CVec<CDiffPackageEntry>,
+    pub meta: CPackageMeta,
+
+    pub dependencies: CVec<CPackageDependency>,
+    pub declarative_triggers: CVec<CSlice>,
+
+    pub free: FreeDecodeResponseFn,
+}
+
+impl Drop for CDecodePackageResponse {
+    fn drop(&mut self) {
+        unsafe { (self.free)(self) };
+    }
 }
