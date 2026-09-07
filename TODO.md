@@ -22,31 +22,28 @@ Remaining: the `Stage::run()` bodies themselves — each needs a real composefs 
 database in context, likely out of scope for unit tests unless a pure-logic helper turns out to be
 extractable.
 
-**Two standalone boot-time services still need to be built** — neither is upac-lib/upac-cli code,
-both run on the installed system itself, outside anything `up`/`up-sp` invokes:
+**`genesis`'s `system/` mechanism is done**: `ImportSystemStage` requires `<source>/system/` (a
+literal 1:1 mirror of the target's real `/usr`, sibling to the package archives —
+`EnumeratePackagesStage` already skips it, it only looks at files) to contain
+`lib/systemd/system/composefs-setup-root.service` (hard error, `SetupError::
+ComposefsSetupRootUnitNotFound`, if missing), imports the whole tree into `PrefixTree`, and creates
+the unit's `*.target.wants/` enablement symlink itself. This is also how a built `up`/`upac-lib`/
+booters gets onto a genesis'd disk at all — genesis never installs itself automatically, whoever
+assembles `--source` has to place it under `system/` too, same assumption already made for the
+systemd-boot/rEFInd binaries. Confirmed `composefs-setup-root`'s own hardcoded expectations already
+match upac's on-disk layout exactly (repo at `composefs/`, per-deploy state at `state/deploy/<hex>/`,
+`composefs=<hex>` cmdline karg) — no restructuring was needed, only the unit + the `system/` plumbing.
+Still unresolved: whether upac ships/packages the `composefs-setup-root` binary itself or expects it
+to already exist on the source distro (same open question as the systemd-boot/rEFInd binaries).
 
-- **composefs-mount boot hook**: nothing yet resolves `composefs=<hash>` (the kernel cmdline param
-  `write_boot_entry` already writes via `ComposefsCmdline::new_v2`) against the on-disk repository,
-  mounts the erofs image with fs-verity, and overlays `state/deploy/<digest>/etc/` — without this, a
-  genesis-produced disk's firmware boots the kernel, but the initramfs has no way to actually
-  assemble the root. The upstream tool for this already exists (`composefs-setup-root`, crates.io,
-  same `composefs-rs` project as our `composefs`/`composefs-boot` deps) — confirmed by reading its
-  `main.rs`: it does NOT ship any systemd unit itself (only the binary — `Makefile`'s
-  `install-setup-root` target installs nothing else), so the unit is ours to write. Confirmed its
-  hardcoded expectations already match our on-disk layout exactly, no restructuring needed:
-  `Repository::open_path(sysroot, "composefs")` ↔ `lib.toml`'s `repo_dir = "composefs"`;
-  `state/deploy/<hex>/{etc,var}` ↔ `deploys_dir = "state/deploy"` +
-  `TargetSysroot::deploy_dir(prefix_digest)`; `composefs=<hex>` karg ↔
-  `ComposefsCmdline::new_v2(...).to_cmdline_arg()`. Remaining work: (1) write the actual `.service`
-  unit (`After=sysroot.mount`, `Before=initrd-root-fs.target`/`initrd-switch-root.target`, same role
-  as ostree's `ostree-prepare-root.service`), (2) have genesis embed it directly into `PrefixTree`
-  before `commit_tree()` — same mechanism `EmbedDatabaseStage` already uses to insert the database
-  file, not a new one — plus create its `*.wants/` enablement symlink since there's no live systemd
-  to `systemctl enable` against on an unbooted target. Still unresolved: whether upac ships/packages
-  the `composefs-setup-root` binary itself or expects it to already exist on the source distro (same
-  open question as systemd-boot/rEFInd's own binaries).
-- **UKI A/B confirm-boot service**: after a successful boot, something needs to confirm once, swap
-  `to`↔`from`, and set the normal persistent boot order. Nothing calls `Booter::confirm_boot`
-  anywhere yet. Open design question: how does the service know it just booted the `to` slot
-  specifically (from `/proc/cmdline`? from the loaded UKI's own filename?) — needs deciding before
-  writing any code.
+**Boot confirmation service, generalized to all 4 plugins (not just UKI)**: `Booter::confirm_boot
+(entry_name)` is already implemented for every plugin — grub (`grub-set-default`, promotes the
+one-shot `grub-reboot` selection to persistent default), systemd-boot (writes `LoaderEntryDefault`),
+rEFInd (writes `PreviousBoot`) all already do the right thing for their own one-shot mechanism; uki
+still needs its to/from swap + persistent NVRAM boot order designed. But nothing anywhere calls
+`confirm_boot` for any of them after a successful boot. Needs its own small service + unit, shipped
+the same way as `composefs-setup-root.service` — via `system/`, built and dropped in by whoever
+assembles `--source`, not embedded in upac itself. Open design question, now needed generically
+(not just for UKI's to/from case): how does the service determine which `entry_name` was actually
+booted (`/proc/cmdline`? the loaded image's own filename? grubenv's own state?) — needs deciding
+before writing any code.
